@@ -167,11 +167,12 @@
     }
 
     JFCustomWidget.subscribe("submit", () => {
-      console.log("Submissão enviada com:", valoresSelecionados);
-      JFCustomWidget.sendSubmit({
-        value: valoresSelecionados
-      });
+    console.log("Submissão enviada com:", valoresSelecionados);
+    JFCustomWidget.sendSubmit({
+      value: JSON.stringify(valoresSelecionados)
     });
+  });
+
   </script>
 </body>
 </html>
