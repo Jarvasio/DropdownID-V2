@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -14,22 +13,17 @@
     label {
       display: block;
       font-weight: bold;
-      width: 100%;
-      height: 60px;
-      text-align: justify;
-      top: 70px;
-      font-size: 18px;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
     }
 
     select {
-      position: relative;
       width: 100%;
-      height: 50%;
-      top: -30px;
       padding: 0.5rem;
       font-size: 1rem;
       border-radius: 8px;
       border: 1px solid #ccc;
+      margin-bottom: 20px;
     }
 
     select:focus {
@@ -37,51 +31,21 @@
       border-color: #3966fa;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
     }
-
   </style>
 </head>
 <body>
 
   <label for="empresa">Selecione a empresa:</label>
-  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
-  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
-  <select id="empresa" class="objeto"><option selected disabled>A carregar opções...</option></select>
+  <select id="empresa"><option selected disabled>A carregar opções...</option></select>
 
   <label for="obraType">Selecione o tipo de obra:</label>
-  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
-  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
-  <select id="obraType" class="objeto2"><option selected disabled>A carregar opções...</option></select>
+  <select id="obraType"><option selected disabled>A carregar opções...</option></select>
 
   <label for="obra">Selecione a obra:</label>
-  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
-  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
   <select id="obra"><option selected disabled>A carregar opções...</option></select>
 
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <script>
-    function myFunction() {
-        document.getElementById("empresa").classList.toggle("show");
-        document.getElementById("obraType").classList.toggle("show");
-        document.getElementById("obra").classList.toggle("show");
-      }
-
-      function filterFunction() {
-        var input, filter, ul, li, a, i;
-        input = document.getElementById("empresa");
-        input = document.getElementById("obraType");
-        input = document.getElementById("obra");
-        filter = input.value.toUpperCase();
-        div = document.getElementById("myDropdown");
-        a = div.getElementsByTagName("a");
-        for (i = 0; i < a.length; i++) {
-          txtValue = a[i].textContent || a[i].innerText;
-          if (txtValue.toUpperCase().indexOf(filter) > -1) {
-            a[i].style.display = "";
-          } else {
-            a[i].style.display = "none";
-          }
-        }
-      }
     const selects = {
       empresa: document.getElementById("empresa"),
       obraType: document.getElementById("obraType"),
@@ -89,16 +53,18 @@
     };
 
     let valoresSelecionados = {};
+    let todasSubmissoes = [];
+    let ids = {};
 
     JFCustomWidget.subscribe("ready", async () => {
       const settings = JFCustomWidget.getWidgetSettings();
       console.log("Parâmetros recebidos:", settings);
 
       const formID = (settings?.IDform || "").trim();
-      const ids = {
+      ids = {
         empresa: (settings?.Empresa || "").trim(),
         obraType: (settings?.ObraType || "").trim(),
-        codigoObra: (settings?.IDquestion || "").trim(),
+        codigoObra: (settings?.IDquestion1 || "").trim(),
         nomeObra: (settings?.IDquestion2 || "").trim()
       };
 
@@ -108,12 +74,12 @@
         if (!/^\d+$/.test(id)) return alert(`ID da pergunta '${key}' inválido: ${id}`);
       }
 
-      await carregarSubmissoes(formID, ids);
+      await carregarSubmissoes(formID);
       JFCustomWidget.setFieldValue("");
       JFCustomWidget.setReady();
     });
 
-    async function carregarSubmissoes(formID, ids) {
+    async function carregarSubmissoes(formID) {
       const url = `https://dropdown-id-v2.vercel.app/api/submissions?formID=${formID}`;
       try {
         const res = await fetch(url);
@@ -121,43 +87,8 @@
 
         if (!data || !Array.isArray(data.content)) throw new Error("Formato inesperado de dados.");
 
-        const conjuntos = {
-          empresa: new Set(),
-          obraType: new Set(),
-          obra: new Set()
-        };
-
-        data.content.forEach(submissao => {
-          const respostas = submissao.answers || {};
-
-          // Empresa e tipo de obra
-          for (const campo of ["empresa", "obraType"]) {
-            const id = ids[campo];
-            if (id in respostas) {
-              const valor = respostas[id]?.answer;
-              if (valor) conjuntos[campo].add(valor);
-            }
-          }
-
-          // Combinar código + nome da obra
-          const codigo = respostas[ids.codigoObra]?.answer || "";
-          const nome = respostas[ids.nomeObra]?.answer || "";
-
-          const combinado = [codigo, nome].filter(Boolean).join(" - ").trim();
-          if (combinado) conjuntos.obra.add(combinado);
-        });
-
-        // Popular os dropdowns
-        for (const [campo, dropdown] of Object.entries(selects)) {
-          dropdown.innerHTML = `<option disabled selected>Escolha uma opção...</option>`;
-          conjuntos[campo].forEach(opcao => {
-            dropdown.appendChild(new Option(opcao, opcao));
-          });
-
-          if (conjuntos[campo].size === 0) {
-            dropdown.innerHTML = `<option disabled selected>Sem opções disponíveis</option>`;
-          }
-        }
+        todasSubmissoes = data.content;
+        atualizarDropdowns(); // inicializa todos com dados completos
 
       } catch (err) {
         console.error("Erro ao consultar a API:", err);
@@ -165,10 +96,52 @@
       }
     }
 
+    function atualizarDropdowns() {
+      const filtros = valoresSelecionados;
+
+      const conjuntosFiltrados = {
+        empresa: new Set(),
+        obraType: new Set(),
+        obra: new Set()
+      };
+
+      todasSubmissoes.forEach(submissao => {
+        const respostas = submissao.answers || {};
+
+        const empresaVal = respostas[ids.empresa]?.answer || "";
+        const obraTypeVal = respostas[ids.obraType]?.answer || "";
+        const codigo = respostas[ids.codigoObra]?.answer || "";
+        const nome = respostas[ids.nomeObra]?.answer || "";
+        const obraVal = [codigo, nome].filter(Boolean).join(" - ").trim();
+
+        const match =
+          (!filtros.empresa || filtros.empresa === empresaVal) &&
+          (!filtros.obraType || filtros.obraType === obraTypeVal) &&
+          (!filtros.obra || filtros.obra === obraVal);
+
+        if (match) {
+          if (empresaVal) conjuntosFiltrados.empresa.add(empresaVal);
+          if (obraTypeVal) conjuntosFiltrados.obraType.add(obraTypeVal);
+          if (obraVal) conjuntosFiltrados.obra.add(obraVal);
+        }
+      });
+
+      for (const [campo, dropdown] of Object.entries(selects)) {
+        const valorAtual = dropdown.value;
+        dropdown.innerHTML = `<option disabled selected>Escolha uma opção...</option>`;
+        conjuntosFiltrados[campo].forEach(opcao => {
+          const opt = new Option(opcao, opcao);
+          if (opcao === valorAtual) opt.selected = true;
+          dropdown.appendChild(opt);
+        });
+      }
+    }
+
     for (const [campo, select] of Object.entries(selects)) {
       select.addEventListener("change", () => {
         valoresSelecionados[campo] = select.value;
         console.log(`Selecionado (${campo}):`, select.value);
+        atualizarDropdowns(); // aplica filtro cruzado
       });
     }
 
