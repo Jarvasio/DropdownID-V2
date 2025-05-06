@@ -40,19 +40,15 @@
   <label for="obraType">Selecione o tipo de obra:</label>
   <select id="obraType" class="objeto2"><option selected disabled>A carregar opções...</option></select>
 
-  <label for="codigoObra">Selecione o código da obra:</label>
-  <select id="codigoObra" class="objeto3"><option selected disabled>A carregar opções...</option></select>
-
-  <label for="nomeObra">Selecione o nome da obra:</label>
-  <select id="nomeObra" class="objeto4"><option selected disabled>A carregar opções...</option></select>
+  <label for="obra">Selecione a obra:</label>
+  <select id="obra"><option selected disabled>A carregar opções...</option></select>
 
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <script>
     const selects = {
       empresa: document.getElementById("empresa"),
       obraType: document.getElementById("obraType"),
-      codigoObra: document.getElementById("codigoObra"),
-      nomeObra: document.getElementById("nomeObra")
+      obra: document.getElementById("obra"),
     };
 
     let valoresSelecionados = {};
@@ -65,7 +61,7 @@
       const ids = {
         empresa: (settings?.Empresa || "").trim(),
         obraType: (settings?.ObraType || "").trim(),
-        codigoObra: (settings?.IDquestion || "").trim(),
+        codigoObra: (settings?.IDquestion1 || "").trim(),
         nomeObra: (settings?.IDquestion2 || "").trim()
       };
 
@@ -91,21 +87,30 @@
         const conjuntos = {
           empresa: new Set(),
           obraType: new Set(),
-          codigoObra: new Set(),
-          nomeObra: new Set()
+          obra: new Set()
         };
 
         data.content.forEach(submissao => {
           const respostas = submissao.answers || {};
 
-          for (const [campo, id] of Object.entries(ids)) {
+          // Empresa e tipo de obra
+          for (const campo of ["empresa", "obraType"]) {
+            const id = ids[campo];
             if (id in respostas) {
               const valor = respostas[id]?.answer;
               if (valor) conjuntos[campo].add(valor);
             }
           }
+
+          // Combinar código + nome da obra
+          const codigo = respostas[ids.codigoObra]?.answer || "";
+          const nome = respostas[ids.nomeObra]?.answer || "";
+
+          const combinado = [codigo, nome].filter(Boolean).join(" - ").trim();
+          if (combinado) conjuntos.obra.add(combinado);
         });
 
+        // Popular os dropdowns
         for (const [campo, dropdown] of Object.entries(selects)) {
           dropdown.innerHTML = `<option disabled selected>Escolha uma opção...</option>`;
           conjuntos[campo].forEach(opcao => {
@@ -131,12 +136,11 @@
     }
 
     JFCustomWidget.subscribe("submit", () => {
-    console.log("Submissão enviada com:", valoresSelecionados);
-    JFCustomWidget.sendSubmit({
-      value: JSON.stringify(valoresSelecionados)
+      console.log("Submissão enviada com:", valoresSelecionados);
+      JFCustomWidget.sendSubmit({
+        value: JSON.stringify(valoresSelecionados)
+      });
     });
-  });
-
   </script>
 </body>
 </html>
