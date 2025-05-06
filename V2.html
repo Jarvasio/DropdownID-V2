@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Dropdown Dinâmico (via formID)</title>
+  <style>
+    body {
+      
+      margin: 20px;
+      background: #f9f9f9;
+      color: #333;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      position: relative;
+      width: 20%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #3966fa;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+    }
+
+    .objeto2 {
+      position: relative;
+      top: -63PX; 
+      left: 330px;
+
+    }
+    label:nth-child(3){
+      position:relative;
+      top: -62px;
+      left:330px;
+    }
+
+    .objeto3 {
+      position: relative;
+      top: -126PX; 
+      left: 660px;
+
+    }
+    label:nth-child(5){
+      position:relative;
+      top: -124px;
+      left:660px;
+    }
+
+    .objeto4 {
+      position: relative;
+      top: -191PX; 
+      left: 990px;
+
+    }
+    label:nth-child(7){
+      position:relative;
+      top: -189px;
+      left:990px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <label for="empresa">Selecione a empresa:</label>
+  <select id="empresa" class="objeto"><option selected disabled>A carregar opções...</option></select>
+
+  <label for="obraType">Selecione o tipo de obra:</label>
+  <select id="obraType" class="objeto2"><option selected disabled>A carregar opções...</option></select>
+
+  <label for="codigoObra">Selecione o código da obra:</label>
+  <select id="codigoObra" class="objeto3"><option selected disabled>A carregar opções...</option></select>
+
+  <label for="nomeObra">Selecione o nome da obra:</label>
+  <select id="nomeObra" class="objeto4"><option selected disabled>A carregar opções...</option></select>
+
+
+  <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
+  <script>
+    const selects = {
+      empresa: document.getElementById("empresa"),
+      obraType: document.getElementById("obraType"),
+      codigoObra: document.getElementById("codigoObra"),
+      nomeObra: document.getElementById("nomeObra")
+    };
+
+    let valoresSelecionados = {};
+
+    JFCustomWidget.subscribe("ready", async () => {
+      const settings = JFCustomWidget.getWidgetSettings();
+      console.log("Parâmetros recebidos:", settings);
+
+      const formID = (settings?.IDform || "").trim();
+      const ids = {
+        empresa: (settings?.IDquestion1 || "").trim(),
+        obraType: (settings?.IDquestion2 || "").trim(),
+        codigoObra: (settings?.IDquestion3 || "").trim(),
+        nomeObra: (settings?.IDquestion4 || "").trim()
+      };
+
+      // Validação básica
+      if (!/^\d{10,}$/.test(formID)) return alert("O parâmetro 'IDform' é inválido.");
+
+      for (const [key, id] of Object.entries(ids)) {
+        if (!/^\d+$/.test(id)) return alert(`ID da pergunta '${key}' inválido: ${id}`);
+      }
+
+      // Carregar submissões
+      await carregarSubmissoes(formID, ids);
+      JFCustomWidget.setFieldValue("");
+      JFCustomWidget.setReady();
+    });
+
+    async function carregarSubmissoes(formID, ids) {
+      const url = `https://jotformproxy.vercel.app/api/submissions?formID=${formID}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data || !Array.isArray(data.content)) throw new Error("Formato inesperado de dados.");
+
+        const conjuntos = {
+          empresa: new Set(),
+          obraType: new Set(),
+          codigoObra: new Set(),
+          nomeObra: new Set()
+        };
+
+        data.content.forEach(submissao => {
+          const respostas = submissao.answers || {};
+
+          for (const [campo, id] of Object.entries(ids)) {
+            if (id in respostas) {
+              const valor = respostas[id]?.answer;
+              if (valor) conjuntos[campo].add(valor);
+            }
+          }
+        });
+
+        for (const [campo, dropdown] of Object.entries(selects)) {
+          dropdown.innerHTML = `<option disabled selected>Escolha uma opção...</option>`;
+          conjuntos[campo].forEach(opcao => {
+            dropdown.appendChild(new Option(opcao, opcao));
+          });
+
+          if (conjuntos[campo].size === 0) {
+            dropdown.innerHTML = `<option disabled selected>Sem opções disponíveis</option>`;
+          }
+        }
+
+      } catch (err) {
+        console.error("Erro ao consultar a API:", err);
+        alert("Erro ao carregar dados do formulário.");
+      }
+    }
+
+    for (const [campo, select] of Object.entries(selects)) {
+      select.addEventListener("change", () => {
+        valoresSelecionados[campo] = select.value;
+        console.log(`Selecionado (${campo}):`, select.value);
+      });
+    }
+
+    JFCustomWidget.subscribe("submit", () => {
+      console.log("Valores selecionados:", valoresSelecionados);
+      JFCustomWidget.sendSubmit({
+        value: valoresSelecionados
+      });
+    });
+  </script>
+</body>
+</html>
