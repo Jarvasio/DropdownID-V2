@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -42,16 +43,45 @@
 <body>
 
   <label for="empresa">Selecione a empresa:</label>
+  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
+  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
   <select id="empresa" class="objeto"><option selected disabled>A carregar opções...</option></select>
 
   <label for="obraType">Selecione o tipo de obra:</label>
+  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
+  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
   <select id="obraType" class="objeto2"><option selected disabled>A carregar opções...</option></select>
 
   <label for="obra">Selecione a obra:</label>
+  <button onclick="myFunction()" class="dropbtn">Dropdown</button>
+  <input type="text" placeholder="Search.." id="myInput" onkeyup="filterFunction()">
   <select id="obra"><option selected disabled>A carregar opções...</option></select>
 
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <script>
+    function myFunction() {
+        document.getElementById("empresa").classList.toggle("show");
+        document.getElementById("obraType").classList.toggle("show");
+        document.getElementById("obra").classList.toggle("show");
+      }
+
+      function filterFunction() {
+        var input, filter, ul, li, a, i;
+        input = document.getElementById("empresa");
+        input = document.getElementById("obraType");
+        input = document.getElementById("obra");
+        filter = input.value.toUpperCase();
+        div = document.getElementById("myDropdown");
+        a = div.getElementsByTagName("a");
+        for (i = 0; i < a.length; i++) {
+          txtValue = a[i].textContent || a[i].innerText;
+          if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            a[i].style.display = "";
+          } else {
+            a[i].style.display = "none";
+          }
+        }
+      }
     const selects = {
       empresa: document.getElementById("empresa"),
       obraType: document.getElementById("obraType"),
