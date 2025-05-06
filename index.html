@@ -128,7 +128,7 @@
 
       for (const [campo, dropdown] of Object.entries(selects)) {
         const valorAtual = dropdown.value;
-        dropdown.innerHTML = `<option disabled selected>Escolha uma opção...</option>`;
+        dropdown.innerHTML = `<option value="">-- Limpar seleção --</option>`;
         conjuntosFiltrados[campo].forEach(opcao => {
           const opt = new Option(opcao, opcao);
           if (opcao === valorAtual) opt.selected = true;
@@ -139,7 +139,11 @@
 
     for (const [campo, select] of Object.entries(selects)) {
       select.addEventListener("change", () => {
-        valoresSelecionados[campo] = select.value;
+        if (select.value) {
+          valoresSelecionados[campo] = select.value;
+        } else {
+          delete valoresSelecionados[campo]; // limpa se seleção for removida
+        }
         console.log(`Selecionado (${campo}):`, select.value);
         atualizarDropdowns(); // aplica filtro cruzado
       });
