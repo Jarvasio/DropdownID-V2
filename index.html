@@ -5,7 +5,6 @@
   <title>Dropdown Dinâmico (via formID)</title>
   <style>
     body {
-      
       margin: 20px;
       background: #f9f9f9;
       color: #333;
@@ -34,40 +33,39 @@
 
     .objeto2 {
       position: relative;
-      top: -63PX; 
+      top: -63px; 
       left: 250px;
-
     }
-    label:nth-child(3){
-      position:relative;
+
+    label:nth-child(3) {
+      position: relative;
       top: -62px;
-      left:150px;
+      left: 150px;
     }
 
     .objeto3 {
       position: relative;
-      top: -126PX; 
+      top: -126px; 
       left: 450px;
-
     }
-    label:nth-child(5){
-      position:relative;
+
+    label:nth-child(5) {
+      position: relative;
       top: -124px;
-      left:450px;
+      left: 450px;
     }
 
     .objeto4 {
       position: relative;
-      top: -191PX; 
+      top: -191px; 
       left: 750px;
-
     }
-    label:nth-child(7){
-      position:relative;
+
+    label:nth-child(7) {
+      position: relative;
       top: -189px;
-      left:750px;
+      left: 750px;
     }
-
   </style>
 </head>
 <body>
@@ -83,7 +81,6 @@
 
   <label for="nomeObra">Selecione o nome da obra:</label>
   <select id="nomeObra" class="objeto4"><option selected disabled>A carregar opções...</option></select>
-
 
   <script src="//js.jotform.com/JotFormCustomWidget.min.js"></script>
   <script>
@@ -108,14 +105,12 @@
         nomeObra: (settings?.IDquestion2 || "").trim()
       };
 
-      // Validação básica
       if (!/^\d{10,}$/.test(formID)) return alert("O parâmetro 'IDform' é inválido.");
 
       for (const [key, id] of Object.entries(ids)) {
         if (!/^\d+$/.test(id)) return alert(`ID da pergunta '${key}' inválido: ${id}`);
       }
 
-      // Carregar submissões
       await carregarSubmissoes(formID, ids);
       JFCustomWidget.setFieldValue("");
       JFCustomWidget.setReady();
@@ -171,23 +166,12 @@
       });
     }
 
-    dropdown.addEventListener("change", () => {
-    valorSelecionado = dropdown.value;
-    console.log("Selecionado:", valorSelecionado);
-
-    JFCustomWidget.send({
-      valid: true,
-      value: valorSelecionado
+    JFCustomWidget.subscribe("submit", () => {
+      console.log("Submissão enviada com:", valoresSelecionados);
+      JFCustomWidget.sendSubmit({
+        value: valoresSelecionados
+      });
     });
-  });
-
-  JFCustomWidget.subscribe("submit", () => {
-    console.log("Submissão enviada com valor:", valorSelecionado);
-
-    JFCustomWidget.sendSubmit({
-      value: valorSelecionado
-    });
-  });
   </script>
 </body>
 </html>
