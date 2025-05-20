@@ -31,7 +31,7 @@
 <body>
 
   <label for="empresa">Selecione a empresa:</label>
-  <select id="empresa" style="width: 50%"><option selected disabled>A carregar opções...</option></select>
+  <select id="empresa"><option selected disabled>A carregar opções...</option></select>
 
   <label for="obraType">Selecione o tipo de obra:</label>
   <select id="obraType"><option selected disabled>A carregar opções...</option></select>
@@ -47,16 +47,10 @@
 
     $(document).ready(function() {
     $('#empresa').select2();
-    });
-
-    $(document).ready(function() {
     $('#obra').select2();
-    });
-
-    $(document).ready(function() {
     $('#obraType').select2();
     });
-    
+
     const selects = {
       empresa: document.getElementById("empresa"),
       obraType: document.getElementById("obraType"),
